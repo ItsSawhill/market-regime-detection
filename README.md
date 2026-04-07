@@ -1,36 +1,60 @@
-# 📈 Market Regime Detection & Regime-Aware Trading Strategy
+# 📈 Market Regime Detection & Systematic Trading Framework
 
 ## 📌 Overview
 
-This project builds a **market regime detection framework** using unsupervised learning on S&P 500 (SPY) time-series data and develops a **regime-aware trading strategy**.
+This project builds a **multi-asset market regime detection framework** using both clustering and probabilistic models, and evaluates **regime-aware trading strategies** under realistic conditions.
 
-The objective is to identify different market states (e.g., bullish, neutral, volatile) and adjust portfolio exposure accordingly to improve **risk-adjusted performance**.
+The system integrates:
+- Walk-forward (rolling) model retraining
+- Multi-asset evaluation (SPY, QQQ, IWM)
+- Macroeconomic proxies (VIX, Treasury yields, USD index)
+- Strategy benchmarking against traditional approaches
+
+The objective is to assess whether **regime-based models improve risk-adjusted performance** compared to standard strategies.
 
 ---
 
 ## 🎯 Objectives
 
-- Detect hidden market regimes using clustering techniques
-- Engineer meaningful time-series features (momentum, volatility, volume)
-- Select optimal number of regimes using **silhouette analysis**
+- Detect hidden market regimes using:
+  - KMeans clustering (static)
+  - Hidden Markov Models (time-dependent)
+- Engineer meaningful financial features across:
+  - price, volatility, momentum, volume, macro signals
+- Select optimal clustering structure using **silhouette analysis**
+- Apply **walk-forward validation** to simulate real-world deployment
 - Analyze **regime persistence and transitions**
-- Build a **rule-based trading strategy conditioned on regimes**
-- Compare performance vs **buy-and-hold benchmark**
+- Compare multiple strategies:
+  - Regime-based (KMeans & HMM)
+  - Momentum strategy
+  - Trend-following strategy
+  - Buy-and-hold benchmark
 
 ---
 
 ## 📊 Data
 
-- Asset: SPY (S&P 500 ETF)
-- Source: `yfinance`
-- Period: 2015 – Present
-- Frequency: Daily
+### Assets
+- SPY (S&P 500)
+- QQQ (NASDAQ 100)
+- IWM (Russell 2000)
+
+### Macro Proxies
+- VIX (volatility index)
+- TNX (10Y Treasury yield proxy)
+- DXY (US Dollar index)
+
+### Source
+- `yfinance`
+
+### Period
+- 2012 – Present
 
 ---
 
 ## 🧠 Feature Engineering
 
-The model uses a rich set of financial features:
+The model incorporates a comprehensive set of financial signals:
 
 ### Returns & Momentum
 - 1-day return
@@ -41,9 +65,9 @@ The model uses a rich set of financial features:
 ### Volatility
 - 10-day volatility
 - 20-day volatility
-- Downside volatility (negative returns only)
+- Downside volatility
 
-### Trend Indicators
+### Trend Signals
 - 20-day moving average gap
 - 50-day moving average gap
 
@@ -53,44 +77,65 @@ The model uses a rich set of financial features:
 ### Risk-Adjusted Signal
 - Rolling Sharpe ratio (20-day)
 
+### Macro Features
+- VIX, TNX, DXY transformations (returns & z-scores)
+
 ---
 
-## 🤖 Model
+## 🤖 Models
 
-### Clustering Algorithm
-- KMeans (unsupervised learning)
+### 1. KMeans Clustering
+- Unsupervised clustering
+- Optimal number of clusters selected via **silhouette score**
 
-### Model Selection
-- Tested k = 3, 4, 5
-- Selected optimal k using **silhouette score**
+### 2. Hidden Markov Model (HMM)
+- Time-dependent probabilistic model
+- Captures **sequential market regimes**
+- Better suited for dynamic market transitions
+
+---
+
+## 🔁 Walk-Forward Framework
+
+- Training window: 3 years
+- Re-training frequency: monthly (~21 days)
+- Models are re-fitted on rolling windows to avoid look-ahead bias
+
+This simulates **real-world trading conditions**.
 
 ---
 
 ## 📌 Regime Interpretation
 
-Clusters are interpreted using volatility and momentum ranking:
+Regimes are identified based on:
+- Momentum ranking
+- Volatility ranking
+- Risk-adjusted signals
 
-- 🟢 **Bullish** → strong momentum, positive trend  
-- ⚪ **Neutral** → weak/mixed signals  
-- 🟠 **Volatile** → high volatility, unstable conditions  
+Typical regimes:
+- 🟢 Bullish → strong momentum, low risk
+- ⚪ Neutral → mixed signals
+- 🔴 Bearish → negative trend
+- 🟠 Volatile → high uncertainty / crisis periods
 
 ---
 
 ## 🔁 Regime Transition Analysis
 
-A transition matrix is computed to analyze regime persistence:
+Transition matrices show strong persistence:
 
-- Bullish regime is highly persistent (~92%)
-- Neutral regime shows moderate persistence (~80%)
-- Volatile regime, although rare, is extremely stable once entered (~94%)
+- Bullish regimes persist ~90%+
+- Neutral regimes persist ~80%
+- Volatile regimes are rare but highly persistent (~90%+)
 
-This confirms that markets exhibit **state-dependent behavior** rather than random transitions.
+This confirms:
+> Markets operate in **state-dependent regimes**, not random behavior.
 
 ---
 
-## 💼 Trading Strategy
+## 💼 Trading Strategies
 
-A simple regime-based allocation strategy:
+### Regime-Based Allocation
 
 | Regime   | Exposure |
 |---------|---------|
@@ -99,48 +144,54 @@ A simple regime-based allocation strategy:
 | Bearish | 0%      |
 | Volatile| 25%     |
 
-- Strategy uses **previous day's regime** to avoid look-ahead bias
-- Compared against buy-and-hold benchmark
+### Additional Benchmarks
+- Momentum strategy (20-day signal)
+- Trend-following (price vs MA50)
+- Buy-and-hold
 
 ---
 
 ## 📈 Results
 
-| Metric | Strategy | Buy & Hold |
-|------|--------|------------|
-| Annual Return | ~10.97% | ~14.70% |
-| Sharpe Ratio | **0.91** | 0.83 |
-| Max Drawdown | **-19.7%** | -33.7% |
+### 📊 Average Performance Across Assets
+
+| Strategy | Avg Annual Return | Sharpe Ratio | Max Drawdown |
+|---------|------------------:|-------------:|-------------:|
+| **HMM Regime** | ~12.6% | 🔥 **Best** | 🔥 **Lowest (~-18%)** |
+| Momentum | ~10.0% | Strong | Moderate |
+| Buy & Hold | ~15.3% | Moderate | ❌ Worst (~-36%) |
+| KMeans Regime | ~8.1% | Weaker | Moderate |
+| Trend Following | ~7.8% | Weaker | Moderate |
 
 ---
 
 ## 🔍 Key Insights
 
-- Regime detection successfully captures underlying market structure
-- Volatility regimes are rare but highly persistent
-- Strategy significantly reduces drawdowns
-- Risk-adjusted performance improves (higher Sharpe)
-- Regime-based approaches are more effective for **risk management than return maximization**
+- HMM-based regime detection outperforms static clustering (KMeans)
+- Time-dependent models better capture market structure
+- Regime-based strategies significantly reduce drawdowns
+- Momentum strategies remain strong in trending markets
+- Buy-and-hold maximizes return but carries high risk
 
 ---
 
 ## ⚠️ Limitations
 
-- Uses single asset (SPY)
-- KMeans assumes spherical clusters
 - No transaction costs included
-- Static clustering (no rolling retraining)
-- No macroeconomic variables included
+- Model assumes fixed feature set
+- HMM convergence can be unstable
+- Does not include full macroeconomic datasets (FRED, etc.)
+- Strategy is rule-based, not optimized
 
 ---
 
 ## 🚀 Future Improvements
 
-- Walk-forward (rolling) regime re-training
-- Apply to multiple assets (QQQ, IWM)
-- Compare with momentum or trend-following strategies
-- Use Hidden Markov Models (HMM) for regime detection
-- Incorporate macroeconomic indicators
+- Transaction cost modeling
+- Portfolio optimization (mean-variance / risk parity)
+- Deep learning models for regime detection
+- Integration with macroeconomic data (FRED)
+- Live trading pipeline / signal deployment
 
 ---
 
